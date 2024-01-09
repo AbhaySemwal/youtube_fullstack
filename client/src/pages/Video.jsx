@@ -1,8 +1,15 @@
-import { AddTaskOutlined, ReplyOutlined, ThumbDownOutlined, ThumbUpOutlined } from '@mui/icons-material';
-import React from 'react'
+import { AddTaskOutlined, ReplyOutlined, ThumbDownAlt, ThumbDownOutlined, ThumbUpAlt, ThumbUpOutlined } from '@mui/icons-material';
+import React, { useEffect, useState } from 'react'
 import styled from 'styled-components'
 import Comments from '../components/Comments';
 import Card from '../components/Card';
+import { useDispatch, useSelector } from 'react-redux';
+import { useLocation } from 'react-router-dom';
+import axios from 'axios';
+import { dislike, fetchSuccess, like } from '../redux/videoSlice';
+import { format } from 'timeago.js';
+import { subscription } from '../redux/userSlice';
+import Reccomendation from '../components/Reccomendation';
 
 const Container=styled.div`
   display: flex;
@@ -55,10 +62,6 @@ const Hr=styled.hr`
   border: 0.5px solid ${({theme})=>theme.soft};
 `;
 
-const Recc=styled.div`
-  flex: 2;
-`;
-
 const Channel=styled.div`
   display: flex;
   justify-content: space-between;
@@ -79,7 +82,7 @@ const Image=styled.img`
 const ChannelDetail=styled.div`
   display: flex;
   flex-direction: column;
-  border: 0.5px solid color ${({theme})=>theme.text};
+  /* border: 0.5px solid ${({theme})=>theme.text}; */
 `
 
 const ChannelName=styled.span`
@@ -89,7 +92,7 @@ const ChannelName=styled.span`
 const ChannelCounter=styled.span`
   margin-bottom: 20px;
   margin-top: 5px;
-  border: 0.5px solid color ${({theme})=>theme.textSoft};
+  /* border: 0.5px solid ${({theme})=>theme.textSoft}; */
   font-size: 12px;
 `
 
@@ -108,12 +111,62 @@ const Subscribe=styled.button`
   cursor: pointer;
 `;
 
+const VideoFrame=styled.video`
+  max-height: 720px;
+  width: 100%;
+  object-fit: cover;
+`;
+
 const Video = () => {
+  const {currentUser}=useSelector((state)=>state.user);
+  const {currentVideo}=useSelector((state)=>state.video);
+  const dispatch=useDispatch();
+  const path=useLocation().pathname.split("/")[2];
+  const [channel,setChannel]=useState({});
+  const [subs,setSubs]=useState();
+  
+  useEffect(()=>{
+    const fetchData=async()=>{
+      try {
+        const videoRes=await axios.get(`/videos/find/${path}`)
+        dispatch(fetchSuccess(videoRes.data));
+        const channelRes=await axios.get(`/users/find/${videoRes.data.userId}`);
+        setChannel(channelRes.data);
+        setSubs(channelRes.data.subscribers);
+      } catch (err) {
+        
+      }
+    }
+    fetchData();
+  },[path]);
+  
+  const handleLike=async()=>{
+    await axios.put(`/users/like/${currentVideo._id}`);
+    dispatch(like(currentUser._id));
+  }
+  const handleDisLike=async()=>{
+    await axios.put(`/users/dislike/${currentVideo._id}`);
+    dispatch(dislike(currentUser._id))
+  }
+  const handleSubscribe=async()=>{
+    if(currentUser.subscribedUsers.includes(channel._id))
+    {
+      setSubs(subs-1);
+      await axios.put(`/users/unsub/${channel._id}`);
+    }
+    else
+    {
+      await axios.put(`/users/sub/${channel._id}`);
+      setSubs(subs+1);
+    }
+    dispatch(subscription(channel._id));
+  }
+
   return (
     <Container>
       <Content>
         <VideoWrapper>
-          <iframe
+          {/* <iframe
             width="100%"
             height="720"
             src='https://www.youtube.com/embed/k3Vfj-e1Ma4'
@@ -121,14 +174,15 @@ const Video = () => {
             frameBorder='0'
             allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
             allowFullScreen
-          ></iframe>
+          ></iframe> */}
+          <VideoFrame src={currentVideo.videoUrl} controls/>
         </VideoWrapper>
-        <Title>Test</Title>
+        <Title>{currentVideo?.title}</Title>
         <Details>
-          <Info>788,987,899 views • Jan 4, 2023</Info>
+          <Info>{currentVideo?.views} views • {format(currentVideo?.createdAt)}</Info>
           <Buttons>
-            <Button><ThumbUpOutlined/>123</Button>
-            <Button><ThumbDownOutlined/>Dislike</Button>
+            <Button onClick={handleLike}>{currentVideo.likes?.includes(currentUser._id)?(<ThumbUpAlt/>):(<ThumbUpOutlined/>)}{currentVideo?.likes?.length}</Button>
+            <Button onClick={handleDisLike}>{currentVideo.dislikes?.includes(currentUser._id)?(<ThumbDownAlt/>):(<ThumbDownOutlined/>)} Dislike</Button>
             <Button><ReplyOutlined/>Share</Button>
             <Button><AddTaskOutlined/>Save</Button>
           </Buttons>
@@ -136,34 +190,21 @@ const Video = () => {
         <Hr/>
         <Channel>
           <ChannelInfo>
-            <Image src="https://yt3.ggpht.com/ytc/AIf8zZQjMbV3-9TaCwDvPAcpnLZpBottwufJjkYb2GAr=s88-c-k-c0x00ffffff-no-rj"/>
+            <Image src={channel?.img}/>
             <ChannelDetail>
-              <ChannelName>OnlyDev</ChannelName>
-              <ChannelCounter>200k subscribers</ChannelCounter>
+              <ChannelName>{channel?.name}</ChannelName>
+              <ChannelCounter>{subs} subscribers</ChannelCounter>
               <Description>
-                Excepteur elit occaecat cillum laboris qui consequat adipisicing.
-                Excepteur elit occaecat cillum laboris qui consequat adipisicing.
-                Excepteur elit occaecat cillum laboris qui consequat adipisicing.
+                {currentVideo?.desc}
               </Description>
             </ChannelDetail>
           </ChannelInfo>
-          <Subscribe>SUBSCRIBE</Subscribe>
+          <Subscribe onClick={handleSubscribe}>{currentUser.subscribedUsers?.includes(channel._id)?"SUBSCRIBED":"SUBSCRIBE"}</Subscribe>
         </Channel>
         <Hr/>
-        <Comments/>
+        <Comments videoId={currentVideo._id}/>
       </Content>
-      <Recc>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-        <Card type="sm"/>
-      </Recc>
+      <Reccomendation tags={currentVideo.tags}/>
     </Container>
   )
 }

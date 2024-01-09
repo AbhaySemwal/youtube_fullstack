@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import logo from '../img/logo.png';
 import { AccountCircleOutlined,Home, MovieOutlined, ExploreOutlined, SubscriptionsOutlined, VideoLibraryOutlined, HistoryOutlined, LibraryMusicOutlined, SportsBasketballOutlined, SportsEsportsOutlined, Newspaper, LiveTv, SettingsOutlined, FlagOutlined, HelpOutlineOutlined, SettingsBrightness } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 const Container=styled.div`
   flex:1;
@@ -69,6 +70,9 @@ const Title=styled.h2`
   margin-bottom: 20px;
 `;
 const Menu = ({darkMode,setDarkMode}) => {
+
+  const {currentUser}=useSelector((state)=>state.user)
+
   const toggleTheme=()=>{
     localStorage.setItem("darkmode", darkMode?"false":"true");
     setDarkMode(!darkMode);
@@ -82,18 +86,24 @@ const Menu = ({darkMode,setDarkMode}) => {
             NewTube
           </Logo>
         </Link>
-        <Item>
-          <Home/>
-          Home
-        </Item>
-        <Item>
-          <ExploreOutlined/>
-          Explore
-        </Item>
-        <Item>
-          <SubscriptionsOutlined/>
-          Subscription
-        </Item>
+        <Link to="/" style={{textDecoration:"none",color:"inherit"}}>
+          <Item>
+            <Home/>
+            Home
+          </Item>
+        </Link>
+        <Link to="/trends" style={{textDecoration:"none",color:"inherit"}}>
+          <Item>
+            <ExploreOutlined/>
+            Explore
+          </Item>
+        </Link>
+        <Link to="/subscriptions" style={{textDecoration:"none",color:"inherit"}}>
+          <Item>
+            <SubscriptionsOutlined/>
+            Subscription
+          </Item>
+        </Link>
         <Hr/>
         <Item>
           <VideoLibraryOutlined/>
@@ -104,13 +114,16 @@ const Menu = ({darkMode,setDarkMode}) => {
           History
         </Item>
         <Hr/>
-        <Login>
-          Sign in to like videos, comment, and subscribe.
-          <Link to="/signin" style={{textDecoration:"none"}}>
-            <Button><AccountCircleOutlined/> SIGN IN</Button>
-          </Link>
-        </Login>
-        <Hr/>
+        {!currentUser&&<>
+          <Login>
+            Sign in to like videos, comment, and subscribe.
+            <Link to="/signin" style={{textDecoration:"none"}}>
+              <Button><AccountCircleOutlined/> SIGN IN</Button>
+            </Link>
+          </Login>
+          <Hr/>
+        </>
+        }
         <Title>BEST OF NEWTUBE</Title>
         <Item>
           <LibraryMusicOutlined/>
